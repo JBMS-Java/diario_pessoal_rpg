@@ -61,9 +61,9 @@
             <div class="section-heading quest-heading">
               <div><p class="eyebrow">PROGRAMAÇÃO E OCORRÊNCIAS</p><h2>Quest Log <span id="quest-count" class="count-pill">0</span></h2></div>
               <div class="quest-actions">
-                <button class="button button-quiet" id="open-routine-form" type="button">＋ Routine</button>
-                <button class="button button-primary" id="open-quest-form" type="button"><span aria-hidden="true">＋</span> Missão especial</button>
-                <button class="button button-quiet" id="open-epic-form" type="button">＋ Epic</button>
+                <button class="button button-quiet" id="open-routine-form" type="button">＋ Weekly</button>
+                <button class="button button-primary" id="open-quest-form" type="button"><span aria-hidden="true">＋</span> Nova missão</button>
+                <button class="button button-quiet" id="open-epic-form" type="button">＋ Main</button>
               </div>
             </div>
             <div class="daily-summary">
@@ -73,7 +73,7 @@
             <div class="schedule-toolbar">
               <label>Data <input id="filter-date" type="date"></label>
               <label>Categoria <select id="filter-category"><option value="">Todas</option><option>Programação e tecnologia</option><option>Estudos e idiomas</option><option>Força e musculação</option><option>Artes marciais</option><option>Resistência física e cardio</option><option>Disciplina e organização</option><option>Desenvolvimento pessoal</option><option>Personalizada</option></select></label>
-              <label>Tipo <select id="filter-kind"><option value="">Todos</option><option value="routine">Routine</option><option value="special">Special</option><option value="epic">Epic</option></select></label>
+              <label>Tipo <select id="filter-kind"><option value="">Todos</option><option value="routine">Weekly</option><option value="special">Side / Training / Daily</option><option value="epic">Main</option></select></label>
               <label>Estado <select id="filter-status"><option value="">Todos</option><option value="pending">Pendente</option><option value="completed">Concluída</option><option value="skipped">Pulada</option><option value="absent">Ausência</option><option value="cancelled">Cancelada</option></select></label>
             </div>
             <div class="week-navigation"><button id="week-previous" class="icon-button" type="button" aria-label="Semana anterior">←</button><strong id="week-label">Programação semanal</strong><button id="week-next" class="icon-button" type="button" aria-label="Próxima semana">→</button><button id="week-today" class="text-button" type="button">Hoje</button></div>
@@ -82,7 +82,7 @@
           </section>
 
           <section class="panel epic-panel">
-            <div class="section-heading"><div><p class="eyebrow">OBJETIVOS DE LONGO PRAZO</p><h2>Epic Quests</h2></div><span class="rank-hex" aria-hidden="true">◇</span></div>
+            <div class="section-heading"><div><p class="eyebrow">OBJETIVOS DE LONGO PRAZO</p><h2>Main Quests</h2></div><span class="rank-hex" aria-hidden="true">◇</span></div>
             <div id="epic-list" class="epic-list"></div>
           </section>
 
@@ -113,14 +113,14 @@
       <form id="quest-form" method="dialog">
         <div class="dialog-heading"><div><p class="eyebrow">NOVA OPERAÇÃO</p><h2>Registrar missão</h2></div><button type="button" class="icon-button" id="close-quest-form" aria-label="Fechar">×</button></div>
         <input type="hidden" name="editId">
-        <label class="field-label" for="mission-kind">Modelo da missão</label>
-        <select id="mission-kind" name="missionKind"><option value="special">Special Quest · evento pontual</option><option value="routine">Routine Quest · recorrente</option><option value="epic">Epic Quest · objetivo em etapas</option></select>
+        <select id="mission-kind" name="missionKind" hidden aria-hidden="true"><option value="special">Side/Training/Daily Quest</option><option value="routine">Weekly Quest · recorrente</option><option value="epic">Main Quest · objetivo em etapas</option></select>
+        <p id="kind-note" class="xp-preview"></p>
         <label class="field-label" for="quest-title">Nome da missão</label>
         <input id="quest-title" name="title" maxlength="80" required placeholder="Ex.: Estudar JavaScript por 45 minutos">
         <label class="field-label" for="quest-description">Descrição <span>opcional</span></label>
         <textarea id="quest-description" name="description" rows="2" maxlength="240" placeholder="O que você pretende concluir?"></textarea>
         <div class="field-grid">
-          <div id="type-field"><label class="field-label" for="quest-type">Tipo</label><select id="quest-type" name="type"><option value="side">Side Quest · 15 XP</option><option value="main">Main Quest · 100 XP</option><option value="daily">Daily Quest · 5 XP</option><option value="weekly">Weekly Quest · 10 XP</option><option value="epic">Epic Quest · 150 XP</option><option value="training">Training Quest · 7 XP</option></select></div>
+          <div id="type-field"><label class="field-label" for="quest-type">Tipo</label><select id="quest-type" name="type"><option value="side">Side Quest · 15 XP</option><option value="training">Training Quest · 7 XP</option><option value="daily">Daily Quest · 5 XP</option></select></div>
           <div><label class="field-label" for="quest-category">Categoria</label><select id="quest-category" name="category"><option>Programação e tecnologia</option><option>Estudos e idiomas</option><option>Força e musculação</option><option>Artes marciais</option><option>Resistência física e cardio</option><option>Disciplina e organização</option><option>Desenvolvimento pessoal</option><option value="custom">Criar categoria…</option></select>
             <div id="custom-category-wrap" class="hidden"><label class="field-label" for="custom-category">Nova categoria</label><input id="custom-category" name="customCategory" maxlength="40" placeholder="Ex.: Música"></div>
           </div>
@@ -142,7 +142,7 @@
           <label class="field-label" for="routine-time">Horário <span>opcional</span></label><input id="routine-time" name="routineTime" type="time">
           <label class="checkbox-field"><input name="weeklyBonus" type="checkbox"> Bônus semanal: +10 XP ao concluir todas as ocorrências desta rotina na semana. Limite global: 25 XP por semana.</label>
         </fieldset>
-        <fieldset id="epic-fields" class="schedule-fields hidden"><legend>Etapas da Epic Quest</legend>
+        <fieldset id="epic-fields" class="schedule-fields hidden"><legend>Etapas da Main Quest</legend>
           <label class="field-label" for="epic-due-date">Prazo <span>opcional; sem penalidade</span></label><input id="epic-due-date" name="dueDate" type="date">
           <label class="field-label" for="epic-subtasks">Subtarefas <span>uma etapa por linha; sem XP individual</span></label><textarea id="epic-subtasks" name="subtasks" rows="4" placeholder="Definir o escopo&#10;Construir a primeira versão&#10;Revisar e concluir"></textarea>
         </fieldset>

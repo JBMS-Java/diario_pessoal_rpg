@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cursed-system-v15';
+const CACHE_NAME = 'cursed-system-v16';
 const APP_SHELL = [
   './',
   './index.html',

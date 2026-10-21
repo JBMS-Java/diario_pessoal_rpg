@@ -55,6 +55,7 @@ const elements = {
   epicFields: document.querySelector('#epic-fields'),
   missionKind: document.querySelector('#mission-kind'),
   typeField: document.querySelector('#type-field'),
+  kindNote: document.querySelector('#kind-note'),
   xpPreview: document.querySelector('#xp-preview'),
   addDemo: document.querySelector('#add-demo'),
   removeDemo: document.querySelector('#remove-demo'),
@@ -94,8 +95,9 @@ function formatDate(dateString, options = { day: '2-digit', month: 'short' }) {
 }
 
 function displayKind(quest) {
-  if (quest.kind === 'routine') return 'ROUTINE';
-  if (quest.kind === 'special') return 'SPECIAL';
+  if (quest.kind === 'routine') return 'WEEKLY';
+  if (quest.kind === 'special') return (quest.type ?? 'side').toUpperCase();
+  if (quest.kind === 'epic') return 'MAIN';
   if (quest.kind === 'legacy') return 'QUEST';
   return quest.kind.toUpperCase();
 }
@@ -213,7 +215,7 @@ function renderEpics(epics) {
     .filter((epic) => !elements.categoryFilter.value || epic.category === elements.categoryFilter.value)
     .filter((epic) => !elements.statusFilter.value || epic.status === elements.statusFilter.value);
   if (!visible.length) {
-    elements.epicList.innerHTML = '<div class="empty-state">Crie uma Epic Quest para acompanhar um objetivo em várias etapas. As etapas não concedem XP individual.</div>';
+    elements.epicList.innerHTML = '<div class="empty-state">Crie uma Main Quest para acompanhar um objetivo em várias etapas. As etapas não concedem XP individual.</div>';
     return;
   }
   elements.epicList.innerHTML = visible.map((epic) => {
@@ -224,13 +226,13 @@ function renderEpics(epics) {
         <span>${escapeHtml(task.title)}</span>
       </label>`).join('');
     return `<article class="epic-card">
-      <div class="epic-card-heading"><div><span class="quest-kind">EPIC${epic.dueDate ? ` · PRAZO ${formatDate(epic.dueDate)}` : ''}</span><h3>${escapeHtml(epic.title)}</h3><p>${escapeHtml(epic.description || epic.category)}</p></div>
+      <div class="epic-card-heading"><div><span class="quest-kind">MAIN${epic.dueDate ? ` · PRAZO ${formatDate(epic.dueDate)}` : ''}</span><h3>${escapeHtml(epic.title)}</h3><p>${escapeHtml(epic.description || epic.category)}</p></div>
         <span class="quest-reward">${epic.status === 'completed' ? `+${epic.xpAwarded ?? epic.xp} XP recebido` : `+${xpFor(epic)} XP final`}</span>
       </div>
       <div class="epic-progress-label"><span>ETAPAS ${progress.completed}/${progress.total}</span><strong>${progress.percentage}%</strong></div>
       <div class="progress-track"><span style="width:${progress.percentage}%;background:var(--magenta)"></span></div>
       <div class="epic-subtasks">${subtasks}</div>
-      ${progress.readyToClaim ? `<button class="button button-primary epic-claim" type="button" data-claim-epic="${escapeHtml(epic.id)}">Concluir Epic e receber +${xpFor(epic)} XP</button>` : epic.status === 'completed' ? '<span class="completed-badge">✓ Epic concluída · recompensa única</span>' : ''}
+      ${progress.readyToClaim ? `<button class="button button-primary epic-claim" type="button" data-claim-epic="${escapeHtml(epic.id)}">Concluir Main Quest e receber +${xpFor(epic)} XP</button>` : epic.status === 'completed' ? '<span class="completed-badge">✓ Main Quest concluída · recompensa única</span>' : ''}
     </article>`;
   }).join('');
 }
@@ -312,6 +314,9 @@ function updateXpPreview() {
   const note = item.kind === 'routine'
     ? `A cada ${POINTS_EVERY} conclusões: +1 Disciplina.`
     : item.kind === 'epic' ? 'Recompensa única ao concluir todas as etapas.' : `+1 ponto de atributo a cada ${POINTS_EVERY} conclusões da mesma área.`;
+  const kindNames = { routine: 'Weekly Quest (recorrente)', epic: 'Main Quest (objetivo em etapas)' };
+  elements.kindNote.textContent = kindNames[item.kind] ?? '';
+  elements.kindNote.classList.toggle('hidden', !kindNames[item.kind]);
   elements.xpPreview.textContent = `Recompensa automática: +${xpFor(item)} XP. ${note}`;
 }
 
@@ -519,7 +524,7 @@ elements.epicList.addEventListener('change', (event) => {
 });
 elements.epicList.addEventListener('click', (event) => {
   const button = event.target.closest('[data-claim-epic]');
-  if (button) perform(() => completeEpic(button.dataset.claimEpic), 'Epic concluída! A recompensa final foi registrada uma única vez.');
+  if (button) perform(() => completeEpic(button.dataset.claimEpic), 'Main Quest concluída! A recompensa final foi registrada uma única vez.');
 });
 elements.rankProgress.addEventListener('click', (event) => {
   if (event.target.id === 'promote-button') perform(() => promoteToNextRank(), 'Promoção registrada. Um novo grau foi alcançado!');
