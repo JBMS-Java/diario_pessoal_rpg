@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cursed-system-v12';
+const CACHE_NAME = 'cursed-system-v15';
 const APP_SHELL = [
   './',
   './index.html',
@@ -10,6 +10,7 @@ const APP_SHELL = [
   './js/modules/experience.js',
   './js/modules/progression.js',
   './js/modules/balance.js',
+  './js/modules/rank-icons.js',
   './js/modules/rewards.js',
   './js/modules/ranks.js',
   './js/modules/quests.js',

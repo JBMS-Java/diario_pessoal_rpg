@@ -4,6 +4,7 @@ import { getLevelProgress } from './modules/experience.js';
 import { localDateKey, weekDates, weekStart } from './modules/quests.js';
 import { POINTS_EVERY, xpFor } from './modules/balance.js';
 import { evaluateNextRank, RANKS } from './modules/ranks.js';
+import { rankIcon } from './modules/rank-icons.js';
 import {
   addDemoQuests,
   completeEpic,
@@ -27,6 +28,7 @@ const TYPE_COLORS = { routine: '#72e0a0', special: '#44e5ed', epic: '#ed60c8', l
 const WEEKDAY_SHORT = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 const elements = {
   currentRank: document.querySelector('#current-rank'),
+  rankSymbol: document.querySelector('#rank-symbol'),
   levelValue: document.querySelector('#level-value'),
   xpLabel: document.querySelector('#xp-label'),
   xpProgress: document.querySelector('#xp-progress'),
@@ -122,12 +124,13 @@ function renderRank(profile, level, quests, epics) {
   const rankQuests = [...quests, ...epics.map((epic) => ({ ...epic, status: epic.status, specialCampaign: epic.specialCampaign }))];
   const evaluation = evaluateNextRank(profile.rankIndex, level, profile.attributes, rankQuests);
   elements.currentRank.textContent = RANKS[profile.rankIndex].name;
+  elements.rankSymbol.innerHTML = rankIcon(profile.rankIndex, 26);
   if (!evaluation) {
-    elements.rankProgress.innerHTML = '<div class="rank-next"><strong>Grau Especial</strong><span>Grau máximo alcançado</span></div><p class="requirement met">Todas as classificações foram conquistadas.</p>';
+    elements.rankProgress.innerHTML = `<div class="rank-next"><strong>${rankIcon(profile.rankIndex, 20)} Grau Especial</strong><span>Grau máximo alcançado</span></div><p class="requirement met">Todas as classificações foram conquistadas.</p>`;
     return;
   }
   elements.rankProgress.innerHTML = `
-    <div class="rank-next"><strong>${escapeHtml(evaluation.rank)}</strong><span>${evaluation.eligible ? 'Requisitos completos' : 'Avaliação pendente'}</span></div>
+    <div class="rank-next"><strong>${rankIcon(profile.rankIndex + 1, 20)} ${escapeHtml(evaluation.rank)}</strong><span>${evaluation.eligible ? 'Requisitos completos' : 'Avaliação pendente'}</span></div>
     <div class="requirement-list">${evaluation.checks.map(({ label, met }) => `<div class="requirement${met ? ' met' : ''}">${escapeHtml(label)}</div>`).join('')}</div>
     <button id="promote-button" class="button button-quiet rank-action" type="button" ${evaluation.eligible ? '' : 'disabled'}>${evaluation.eligible ? 'Concluir avaliação de promoção ↗' : 'Continue evoluindo'}</button>`;
 }

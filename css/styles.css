@@ -43,7 +43,9 @@ h1 { margin-bottom: 5px; font: 600 clamp(34px, 4vw, 46px)/1 'Arial Narrow', 'Seg
 .accent { color: var(--cyan); }
 .hero-subtitle { margin: 0; color: #97a4b4; font-size: 12px; }
 .rank-badge { display: inline-flex; align-items: center; gap: 10px; margin-top: 24px; padding: 8px 13px 8px 10px; border: 1px solid rgba(164, 119, 255, .3); background: rgba(164, 119, 255, .06); }
-.rank-symbol { color: var(--purple); font-size: 21px; }
+.rank-symbol { display: inline-flex; color: var(--purple); }
+.rank-icon { flex: 0 0 auto; }
+.rank-next strong { display: inline-flex; align-items: center; gap: 7px; }
 .rank-badge small, .rank-badge strong { display: block; }
 .rank-badge small { color: var(--muted); font-size: 8px; letter-spacing: .13em; }
 .rank-badge strong { margin-top: 2px; color: #d6c6ff; font: 600 16px 'Arial Narrow', 'Segoe UI', sans-serif; }
