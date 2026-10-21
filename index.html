@@ -115,31 +115,17 @@
         <input type="hidden" name="editId">
         <label class="field-label" for="mission-kind">Modelo da missão</label>
         <select id="mission-kind" name="missionKind"><option value="special">Special Quest · evento pontual</option><option value="routine">Routine Quest · recorrente</option><option value="epic">Epic Quest · objetivo em etapas</option></select>
-        <label class="field-label" for="reward-preset">Modelo de recompensa <span>opcional · apenas preenche o formulário</span></label>
-        <select id="reward-preset"><option value="">Sem modelo</option></select>
         <label class="field-label" for="quest-title">Nome da missão</label>
         <input id="quest-title" name="title" maxlength="80" required placeholder="Ex.: Estudar JavaScript por 45 minutos">
         <label class="field-label" for="quest-description">Descrição <span>opcional</span></label>
         <textarea id="quest-description" name="description" rows="2" maxlength="240" placeholder="O que você pretende concluir?"></textarea>
         <div class="field-grid">
-          <div><label class="field-label" for="quest-type">Tipo</label><select id="quest-type" name="type"><option value="side">Side Quest</option><option value="main">Main Quest</option><option value="daily">Daily Quest</option><option value="weekly">Weekly Quest</option><option value="epic">Epic Quest</option><option value="training">Training Quest</option></select></div>
+          <div id="type-field"><label class="field-label" for="quest-type">Tipo</label><select id="quest-type" name="type"><option value="side">Side Quest · 15 XP</option><option value="main">Main Quest · 100 XP</option><option value="daily">Daily Quest · 5 XP</option><option value="weekly">Weekly Quest · 10 XP</option><option value="epic">Epic Quest · 150 XP</option><option value="training">Training Quest · 7 XP</option></select></div>
           <div><label class="field-label" for="quest-category">Categoria</label><select id="quest-category" name="category"><option>Programação e tecnologia</option><option>Estudos e idiomas</option><option>Força e musculação</option><option>Artes marciais</option><option>Resistência física e cardio</option><option>Disciplina e organização</option><option>Desenvolvimento pessoal</option><option value="custom">Criar categoria…</option></select>
             <div id="custom-category-wrap" class="hidden"><label class="field-label" for="custom-category">Nova categoria</label><input id="custom-category" name="customCategory" maxlength="40" placeholder="Ex.: Música"></div>
           </div>
         </div>
-        <div class="field-grid">
-          <div><label class="field-label" for="quest-difficulty">Dificuldade</label><select id="quest-difficulty" name="difficulty"><option value="easy">Fácil · 10 XP</option><option value="normal" selected>Normal · 25 XP</option><option value="hard">Difícil · 50 XP</option><option value="epic">Épica · 100 XP</option><option value="custom">Personalizada</option></select></div>
-          <div id="custom-xp-wrap" class="hidden"><label class="field-label" for="quest-custom-xp">XP personalizado <span>máx. 500</span></label><input id="quest-custom-xp" name="customXp" type="number" min="1" max="500" value="25"></div>
-        </div>
-        <fieldset id="xp-estimator" class="schedule-fields hidden"><legend>Sugestão de XP <span>esforço, importância, preparo e raridade</span></legend>
-          <div class="field-grid attribute-input-grid">
-            <label>Esforço<input name="est-effort" type="number" min="1" max="5" value="3"></label>
-            <label>Importância<input name="est-importance" type="number" min="1" max="5" value="3"></label>
-            <label>Preparação<input name="est-preparation" type="number" min="1" max="5" value="3"></label>
-            <label>Raridade<input name="est-rarity" type="number" min="1" max="5" value="3"></label>
-          </div>
-          <button class="button button-quiet" type="button" id="suggest-xp">Sugerir XP</button>
-        </fieldset>
+        <p id="xp-preview" class="xp-preview" role="status"></p>
         <div id="special-fields" class="field-grid">
           <div><label class="field-label" for="special-date">Data da missão</label><input id="special-date" name="date" type="date"></div>
           <div><label class="field-label" for="special-time">Horário</label><input id="special-time" name="time" type="time"></div>
@@ -159,15 +145,6 @@
         <fieldset id="epic-fields" class="schedule-fields hidden"><legend>Etapas da Epic Quest</legend>
           <label class="field-label" for="epic-due-date">Prazo <span>opcional; sem penalidade</span></label><input id="epic-due-date" name="dueDate" type="date">
           <label class="field-label" for="epic-subtasks">Subtarefas <span>uma etapa por linha; sem XP individual</span></label><textarea id="epic-subtasks" name="subtasks" rows="4" placeholder="Definir o escopo&#10;Construir a primeira versão&#10;Revisar e concluir"></textarea>
-        </fieldset>
-        <fieldset class="attribute-fields"><legend>Recompensas de atributo <span>opcional · até 15 pontos no total</span></legend>
-          <div class="field-grid attribute-input-grid">
-            <label>Intelecto<input name="attr-intellect" type="number" min="0" max="10" value="0"></label>
-            <label>Força<input name="attr-strength" type="number" min="0" max="10" value="0"></label>
-            <label>Técnica<input name="attr-technique" type="number" min="0" max="10" value="0"></label>
-            <label>Resistência<input name="attr-endurance" type="number" min="0" max="10" value="0"></label>
-            <label>Disciplina<input name="attr-discipline" type="number" min="0" max="10" value="0"></label>
-          </div>
         </fieldset>
         <div class="field-grid">
           <label class="checkbox-field"><input name="elite" type="checkbox"> Missão de elite</label>

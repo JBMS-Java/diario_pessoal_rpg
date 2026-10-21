@@ -1,4 +1,5 @@
 import { createInitialAttributes, validateAttributes } from './attributes.js';
+import { rewardFor, xpFor } from './balance.js';
 import { getLevelProgress, validateReward } from './experience.js';
 import { buildScheduledOccurrences, buildSpecialOccurrence, localDateKey, normalizeActivityKey, shouldAwardWeeklyBonus, validateRoutine, validateSpecialQuest, weekStart, weekDates, WEEKLY_BONUS_CAP, WEEKLY_BONUS_XP } from './quests.js';
 import { evaluateNextRank, RANKS } from './ranks.js';
@@ -560,7 +561,8 @@ export async function completeOccurrence(occurrenceId) {
             normalizeActivityKey(epic.title, epic.category, occurrence.date) === occurrence.activityKey
           );
           if (duplicateEpic) throw new Error('Uma Epic Quest já recebeu recompensa por esta atividade nesta data.');
-          const baseReward = addRewardRecords(transaction, profile, occurrence, occurrence.id, occurrence.kind, occurrence.title);
+          const earned = rewardFor(occurrence, allOccurrences);
+          const baseReward = addRewardRecords(transaction, profile, earned, occurrence.id, occurrence.kind, occurrence.title);
           let nextProfile = { ...profile, totalXp: baseReward.totalXp, attributes: baseReward.updatedAttributes };
           const routine = routines.find(({ id }) => id === occurrence.definitionId);
           if (routine?.weeklyBonus) {
@@ -600,7 +602,14 @@ export async function completeOccurrence(occurrenceId) {
               }
             }
           }
-          occurrenceStore.put({ ...occurrence, status: 'completed', completedAt: new Date().toISOString(), xpAwarded: occurrence.xp });
+          occurrenceStore.put({
+            ...occurrence,
+            status: 'completed',
+            completedAt: new Date().toISOString(),
+            xp: earned.xp,
+            xpAwarded: earned.xp,
+            attributeRewards: earned.attributeRewards
+          });
         } catch (error) {
           operationError = error;
           transaction.abort();
@@ -722,8 +731,9 @@ export async function completeEpic(epicId) {
               activeDays: []
             };
             try {
-              addRewardRecords(transaction, profile, epic, `epic:${epic.id}`, 'epic', epic.title, 'epic');
-              epicStore.put({ ...epic, status: 'completed', completedAt: new Date().toISOString(), xpAwarded: epic.xp });
+              const epicXp = xpFor({ kind: 'epic' });
+              addRewardRecords(transaction, profile, { xp: epicXp, attributeRewards: createInitialAttributes() }, `epic:${epic.id}`, 'epic', epic.title, 'epic');
+              epicStore.put({ ...epic, status: 'completed', completedAt: new Date().toISOString(), xp: epicXp, xpAwarded: epicXp });
             } catch (error) {
               operationError = error;
               transaction.abort();

@@ -1,8 +1,8 @@
 import { ATTRIBUTE_DEFINITIONS } from './modules/attributes.js';
 import { getEpicProgress } from './modules/epics.js';
-import { getLevelProgress, XP_REWARDS } from './modules/experience.js';
+import { getLevelProgress } from './modules/experience.js';
 import { localDateKey, weekDates, weekStart } from './modules/quests.js';
-import { EPIC_XP_RANGE, getRewardPreset, REWARD_PRESETS, SPECIAL_XP_RANGE, suggestEventXp } from './modules/rewards.js';
+import { POINTS_EVERY, xpFor } from './modules/balance.js';
 import { evaluateNextRank, RANKS } from './modules/ranks.js';
 import {
   addDemoQuests,
@@ -46,16 +46,14 @@ const elements = {
   form: document.querySelector('#quest-form'),
   formError: document.querySelector('#form-error'),
   toast: document.querySelector('#toast'),
-  customXpWrap: document.querySelector('#custom-xp-wrap'),
-  customXp: document.querySelector('#quest-custom-xp'),
   customCategoryWrap: document.querySelector('#custom-category-wrap'),
   customCategory: document.querySelector('#custom-category'),
   specialFields: document.querySelector('#special-fields'),
   routineFields: document.querySelector('#routine-fields'),
   epicFields: document.querySelector('#epic-fields'),
   missionKind: document.querySelector('#mission-kind'),
-  rewardPreset: document.querySelector('#reward-preset'),
-  xpEstimator: document.querySelector('#xp-estimator'),
+  typeField: document.querySelector('#type-field'),
+  xpPreview: document.querySelector('#xp-preview'),
   addDemo: document.querySelector('#add-demo'),
   removeDemo: document.querySelector('#remove-demo'),
   dateFilter: document.querySelector('#filter-date'),
@@ -174,12 +172,12 @@ function renderQuests() {
   }
 
   elements.questList.innerHTML = quests.map((quest) => {
-    const rewards = Object.entries(quest.attributeRewards ?? {})
+    const received = quest.status === 'completed';
+    const rewards = received ? Object.entries(quest.attributeRewards ?? {})
       .filter(([, points]) => points > 0)
       .map(([id, points]) => `+${points} ${ATTRIBUTE_LABELS[id]}`)
-      .join(' · ');
+      .join(' · ') : '';
     const terminal = quest.status !== 'pending';
-    const received = quest.status === 'completed';
     let actions = '';
     if (!terminal) {
       actions += `<button class="complete-button" type="button" data-action="complete" data-id="${escapeHtml(quest.id)}">Concluir ✓</button>`;
@@ -196,7 +194,8 @@ function renderQuests() {
     } else {
       actions = `<span class="completed-badge ${received ? '' : 'muted-status'}">${received ? '✓ Concluída' : quest.status === 'absent' ? 'Ausência registrada' : quest.status === 'skipped' ? 'Pulada' : 'Cancelada'}</span>`;
     }
-    const rewardText = received ? `+${quest.xpAwarded ?? quest.xp} XP recebido` : `+${quest.xp} XP potencial`;
+    const potentialXp = ['routine', 'special'].includes(quest.kind) ? xpFor(quest) : quest.xp;
+    const rewardText = received ? `+${quest.xpAwarded ?? quest.xp} XP recebido` : `+${potentialXp} XP potencial`;
     return `<article class="quest-card quest-${escapeHtml(quest.kind)}">
       <span class="quest-accent" style="--quest-color:${TYPE_COLORS[quest.kind] ?? '#44e5ed'}"></span>
       <div class="quest-info"><span class="quest-kind">${displayKind(quest)}${quest.time ? ` · ${escapeHtml(quest.time)}` : ''}</span><h3>${escapeHtml(quest.title)}</h3><p>${escapeHtml(quest.description || quest.category)}${quest.demo ? ' · Demo' : ''}</p></div>
@@ -223,12 +222,12 @@ function renderEpics(epics) {
       </label>`).join('');
     return `<article class="epic-card">
       <div class="epic-card-heading"><div><span class="quest-kind">EPIC${epic.dueDate ? ` · PRAZO ${formatDate(epic.dueDate)}` : ''}</span><h3>${escapeHtml(epic.title)}</h3><p>${escapeHtml(epic.description || epic.category)}</p></div>
-        <span class="quest-reward">${epic.status === 'completed' ? `+${epic.xpAwarded ?? epic.xp} XP recebido` : `+${epic.xp} XP final`}</span>
+        <span class="quest-reward">${epic.status === 'completed' ? `+${epic.xpAwarded ?? epic.xp} XP recebido` : `+${xpFor(epic)} XP final`}</span>
       </div>
       <div class="epic-progress-label"><span>ETAPAS ${progress.completed}/${progress.total}</span><strong>${progress.percentage}%</strong></div>
       <div class="progress-track"><span style="width:${progress.percentage}%;background:var(--magenta)"></span></div>
       <div class="epic-subtasks">${subtasks}</div>
-      ${progress.readyToClaim ? `<button class="button button-primary epic-claim" type="button" data-claim-epic="${escapeHtml(epic.id)}">Concluir Epic e receber +${epic.xp} XP</button>` : epic.status === 'completed' ? '<span class="completed-badge">✓ Epic concluída · recompensa única</span>' : ''}
+      ${progress.readyToClaim ? `<button class="button button-primary epic-claim" type="button" data-claim-epic="${escapeHtml(epic.id)}">Concluir Epic e receber +${xpFor(epic)} XP</button>` : epic.status === 'completed' ? '<span class="completed-badge">✓ Epic concluída · recompensa única</span>' : ''}
     </article>`;
   }).join('');
 }
@@ -300,16 +299,26 @@ async function perform(action, successMessage) {
   }
 }
 
+function currentRewardItem() {
+  const kind = elements.missionKind.value;
+  return { kind, type: kind === 'routine' ? 'daily' : kind === 'epic' ? 'epic' : elements.form.elements.type.value };
+}
+
+function updateXpPreview() {
+  const item = currentRewardItem();
+  const note = item.kind === 'routine'
+    ? `A cada ${POINTS_EVERY} conclusões: +1 Disciplina.`
+    : item.kind === 'epic' ? 'Recompensa única ao concluir todas as etapas.' : `+1 ponto de atributo a cada ${POINTS_EVERY} conclusões da mesma área.`;
+  elements.xpPreview.textContent = `Recompensa automática: +${xpFor(item)} XP. ${note}`;
+}
+
 function setMissionKind(kind) {
   elements.missionKind.value = kind;
   elements.specialFields.classList.toggle('hidden', kind !== 'special');
   elements.routineFields.classList.toggle('hidden', kind !== 'routine');
   elements.epicFields.classList.toggle('hidden', kind !== 'epic');
-  elements.xpEstimator.classList.toggle('hidden', kind === 'routine');
-  elements.rewardPreset.replaceChildren(new Option('Sem modelo', ''));
-  for (const item of REWARD_PRESETS.filter((preset) => preset.kind === kind)) {
-    elements.rewardPreset.append(new Option(item.label, item.id));
-  }
+  elements.typeField.classList.toggle('hidden', kind !== 'special');
+  updateXpPreview();
   const title = document.querySelector('#quest-title');
   title.required = true;
   const date = elements.form.elements.date;
@@ -323,13 +332,9 @@ function openDialog(kind, definition = null, occurrence = null) {
   elements.formError.textContent = '';
   editingOccurrenceId = occurrence?.id ?? null;
   elements.form.elements.editId.value = definition?.id ?? '';
-  elements.customXpWrap.classList.add('hidden');
   elements.customCategoryWrap.classList.add('hidden');
   elements.customCategory.required = false;
   setMissionKind(kind);
-  const selectedDifficulty = definition?.difficulty ?? occurrence?.difficulty ?? 'normal';
-  elements.form.elements.difficulty.value = selectedDifficulty;
-  elements.customXpWrap.classList.toggle('hidden', selectedDifficulty !== 'custom');
   const category = definition?.category ?? occurrence?.category ?? 'Desenvolvimento pessoal';
   if (![...elements.form.elements.category.options].some(({ value }) => value === category)) {
     const option = document.createElement('option');
@@ -342,17 +347,7 @@ function openDialog(kind, definition = null, occurrence = null) {
   elements.form.elements.title.value = definition?.title ?? occurrence?.title ?? '';
   elements.form.elements.description.value = definition?.description ?? occurrence?.description ?? '';
   elements.form.elements.type.value = definition?.type ?? occurrence?.type ?? 'side';
-  elements.form.elements.customXp.value = definition?.xp ?? occurrence?.xp ?? 25;
-  if (!definition && !occurrence && kind !== 'routine') {
-    const range = kind === 'epic' ? EPIC_XP_RANGE : SPECIAL_XP_RANGE;
-    elements.form.elements.difficulty.value = 'custom';
-    elements.form.elements.customXp.value = range.default;
-    elements.customXpWrap.classList.remove('hidden');
-  }
-  for (const id of ATTRIBUTE_IDS) {
-    elements.form.elements[`attr-${id}`].value = definition?.attributeRewards?.[id] ?? occurrence?.attributeRewards?.[id] ?? 0;
-  }
-  elements.form.elements.elite.checked = Boolean(definition?.elite ?? occurrence?.elite);
+  updateXpPreview();  elements.form.elements.elite.checked = Boolean(definition?.elite ?? occurrence?.elite);
   elements.form.elements.specialCampaign.checked = Boolean(definition?.specialCampaign ?? occurrence?.specialCampaign);
   if (kind === 'special') {
     elements.form.elements.date.value = definition?.date ?? occurrence?.date ?? selectedDate;
@@ -376,15 +371,10 @@ function openDialog(kind, definition = null, occurrence = null) {
 }
 
 function rewardFromForm(formData) {
-  const difficulty = formData.get('difficulty');
-  const xp = difficulty === 'custom' ? Number(formData.get('customXp')) : XP_REWARDS[difficulty];
-  if (!Number.isInteger(xp) || xp < 1 || xp > 500) throw new Error('O XP deve estar entre 1 e 500.');
-  const attributeRewards = Object.fromEntries(ATTRIBUTE_IDS.map((id) => [id, Number(formData.get(`attr-${id}`) || 0)]));
-  if (Object.values(attributeRewards).some((value) => !Number.isInteger(value) || value < 0 || value > 10) ||
-    Object.values(attributeRewards).reduce((sum, value) => sum + value, 0) > 15) {
-    throw new Error('Cada atributo pode receber até 10 pontos e o total não pode ultrapassar 15.');
-  }
-  return { difficulty, xp, attributeRewards };
+  const kind = String(formData.get('missionKind'));
+  const type = kind === 'routine' ? 'daily' : kind === 'epic' ? 'epic' : String(formData.get('type'));
+  const attributeRewards = Object.fromEntries(ATTRIBUTE_IDS.map((id) => [id, 0]));
+  return { difficulty: 'fixed', type, xp: xpFor({ kind, type }), attributeRewards };
 }
 
 function definitionFromForm(formData) {
@@ -394,7 +384,6 @@ function definitionFromForm(formData) {
     kind: String(formData.get('missionKind')),
     title: String(formData.get('title') || '').trim(),
     description: String(formData.get('description') || '').trim(),
-    type: String(formData.get('type')),
     category: String(formData.get('category')),
     ...reward,
     elite: formData.get('elite') === 'on',
@@ -436,37 +425,8 @@ document.querySelector('#open-epic-form').addEventListener('click', () => openDi
 document.querySelector('#close-quest-form').addEventListener('click', () => elements.dialog.close());
 document.querySelector('#cancel-quest-form').addEventListener('click', () => elements.dialog.close());
 elements.missionKind.addEventListener('change', (event) => setMissionKind(event.target.value));
-elements.rewardPreset.addEventListener('change', (event) => {
-  const preset = getRewardPreset(event.target.value);
-  if (!preset) return;
-  const fields = elements.form.elements;
-  fields.title.value = preset.title;
-  fields.type.value = preset.type;
-  if ([...fields.category.options].some(({ value }) => value === preset.category)) fields.category.value = preset.category;
-  fields.difficulty.value = 'custom';
-  fields.customXp.value = preset.xp;
-  elements.customXpWrap.classList.remove('hidden');
-  for (const id of ATTRIBUTE_IDS) fields[`attr-${id}`].value = preset.attributeRewards[id];
-});
-document.querySelector('#suggest-xp').addEventListener('click', () => {
-  const fields = elements.form.elements;
-  try {
-    const xp = suggestEventXp(elements.missionKind.value, {
-      effort: Number(fields['est-effort'].value),
-      importance: Number(fields['est-importance'].value),
-      preparation: Number(fields['est-preparation'].value),
-      rarity: Number(fields['est-rarity'].value)
-    });
-    fields.difficulty.value = 'custom';
-    fields.customXp.value = xp;
-    elements.customXpWrap.classList.remove('hidden');
-    elements.formError.textContent = '';
-  } catch (error) {
-    elements.formError.textContent = error.message;
-  }
-});
 elements.form.addEventListener('change', (event) => {
-  if (event.target.name === 'difficulty') elements.customXpWrap.classList.toggle('hidden', event.target.value !== 'custom');
+  if (event.target.name === 'type') updateXpPreview();
   if (event.target.name === 'category') {
     const custom = event.target.value === 'custom';
     elements.customCategoryWrap.classList.toggle('hidden', !custom);
@@ -526,10 +486,6 @@ elements.form.addEventListener('submit', async (event) => {
   } catch (error) {
     elements.formError.textContent = error.message || 'Não foi possível salvar a missão.';
   }
-});
-elements.customXp.addEventListener('input', () => {
-  elements.customXp.setCustomValidity(elements.customXp.value && (Number(elements.customXp.value) < 1 || Number(elements.customXp.value) > 500)
-    ? 'O valor deve estar entre 1 e 500.' : '');
 });
 elements.questList.addEventListener('click', (event) => {
   const button = event.target.closest('[data-action]');
